@@ -11,7 +11,7 @@ process MULTIQC {
 
     script:
     """
-    multiqc --force --filename multiqc_report.html in
+    multiqc --force in    # default names: multiqc_report.html, multiqc_data/
     """
 
     stub:
