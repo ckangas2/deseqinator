@@ -20,10 +20,14 @@ jobs:
         with: { python-version: '3.11' }
       - run: pip install numpy pandas pytest
       - run: bash tests/run_tests.sh
+      # Compared decompressed: gzip header bytes vary with the Python/zlib
+      # version that wrote them, the content must not.
       - name: Test data is reproducible from the generator
         run: |
           python3 tests/make_test_data.py regen >/dev/null
-          for f in tests/data/*; do cmp "$f" "regen/$(basename "$f")"; done
+          for f in tests/data/*; do
+            cmp <(zcat -f "$f") <(zcat -f "regen/$(basename "$f")") || { echo "differs: $f"; exit 1; }
+          done
 
   pipeline:
     name: End to end, Nextflow ${{ matrix.nxf }}
