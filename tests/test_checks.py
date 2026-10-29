@@ -313,3 +313,21 @@ def test_gene_table(tmp_path):
     rows = list(csv.DictReader(open(tmp_path / "g.tsv"), delimiter="\t"))
     assert len(rows) == 200 and rows[0]["gene_name"] == "GENE001"
     assert rows[0]["gene_id"] != rows[0]["gene_id_unversioned"]
+
+
+# ------------------------------------------------------------------ test data
+
+def test_fastq_records_are_well_formed():
+    """Every record: @header, sequence, '+', quality of the same length.
+
+    fastp rejects a mismatched record outright; a generator bug here once
+    produced 74 bp reads with 75 bp quality strings.
+    """
+    for fq in sorted(DATA.glob("*.fastq.gz")):
+        with gzip.open(fq, "rt") as fh:
+            lines = fh.read().splitlines()
+        assert len(lines) % 4 == 0, fq.name
+        for i in range(0, len(lines), 4):
+            h, s, plus, q = lines[i:i + 4]
+            assert h.startswith("@") and plus == "+", f"{fq.name} record {i // 4}"
+            assert len(s) == len(q) and s, f"{fq.name} {h}: seq {len(s)} vs qual {len(q)}"

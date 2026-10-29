@@ -153,7 +153,7 @@ def main(out):
             if rnd.random() < 0.05:                # short insert, adapter read-through
                 cut = rnd.randint(40, READ_LEN - 15)
                 seq = (seq[:cut] + ADAPTER)[:READ_LEN]
-            lines.append(f"@{smp['sample']}.{k}\n{seq}\n+\n{'I' * READ_LEN}\n")
+            lines.append(f"@{smp['sample']}.{k}\n{seq}\n+\n{'I' * len(seq)}\n")
         for g, n in enumerate(counts):
             t = tx[g]
             for _ in range(n):
