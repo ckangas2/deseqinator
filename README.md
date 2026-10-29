@@ -147,6 +147,7 @@ python3 tests/check_test_results.py results
 ## Status
 
 - [x] Unit tests (28) pass; `nextflow lint` clean; stub run completes, and design failures stop it before alignment
-- [ ] Container build and conda solve (pins not yet verified)
-- [ ] `-profile test,docker` end to end in CI, including the seven negative cases
+- [x] Container build and conda solve
+- [x] `-profile test,docker` end to end locally (Nextflow 26.10.4): 17/17 result checks pass
+- [ ] The same in CI, plus the seven negative cases
 - [ ] GSE147507 run; DE counts vs published reanalyses; Hallmark results; reconciliation against the deposited matrix → RESULTS.md
