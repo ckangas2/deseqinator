@@ -1,7 +1,7 @@
 process FGSEA {
     tag "${id}"
     label 'process_low'
-    publishDir "${params.outdir}/fgsea/${id}", mode: params.publish_dir_mode
+    publishDir "${params.outdir}/fgsea", mode: params.publish_dir_mode
 
     input:
     tuple val(id), path(deseq)
@@ -9,15 +9,16 @@ process FGSEA {
     val   gene_sets
 
     output:
-    path "${id}.fgsea.tsv",         emit: results
-    path "${id}.fgsea_summary.tsv", emit: summary
-    path "${id}.*",                 emit: all
+    path "${id}/${id}.fgsea.tsv",         emit: results
+    path "${id}/${id}.fgsea_summary.tsv", emit: summary
+    path "${id}/*",                       emit: all
 
     script:
     """
+    mkdir ${id} && cd ${id}
     run_fgsea.R \\
-        --deseq ${deseq} --id ${id} \\
-        --gene_sets '${gene_sets}' --gmt ${gmt} \\
+        --deseq ../${deseq} --id ${id} \\
+        --gene_sets '${gene_sets}' --gmt ../${gmt} \\
         --min_size ${params.fgsea_min_size} --max_size ${params.fgsea_max_size} \\
         --min_coverage ${params.fgsea_min_coverage} \\
         --max_null_hits ${params.fgsea_max_null_hits} \\
@@ -26,7 +27,8 @@ process FGSEA {
 
     stub:
     """
-    touch ${id}.fgsea.tsv
-    printf 'id\\tsets_sig\\n${id}\\t0\\n' > ${id}.fgsea_summary.tsv
+    mkdir ${id}
+    touch ${id}/${id}.fgsea.tsv
+    printf 'id\\tsets_sig\\n${id}\\t0\\n' > ${id}/${id}.fgsea_summary.tsv
     """
 }

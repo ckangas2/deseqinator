@@ -24,6 +24,9 @@ def tsv(p):
 
 def main(res):
     res = Path(res)
+    if not (res / "summary.tsv").exists():
+        print(f"no completed run in {res}/ (summary.tsv missing): run the test profile first")
+        return 2
     fails = []
     def check(cond, msg):
         print(("  PASS  " if cond else "  FAIL  ") + msg)
