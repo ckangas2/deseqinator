@@ -1,0 +1,10 @@
+sample,fastq_1,fastq_2,cell_line,condition,replicate,batch,deposited_id
+lineA_mock_1,lineA_mock_1.fastq.gz,,lineA,Mock,1,b1,Series1_lineA_Mock_1
+lineA_mock_2,lineA_mock_2.fastq.gz,,lineA,Mock,2,b1,Series1_lineA_SARS-CoV-2_2
+lineA_mock_3,lineA_mock_3.fastq.gz,,lineA,Mock,3,b1,Series1_lineA_Mock_3
+lineA_inf_1,lineA_inf_1.fastq.gz,,lineA,SARS-CoV-2,1,b1,Series1_lineA_SARS-CoV-2_1
+lineA_inf_2,lineA_inf_2.fastq.gz,,lineA,SARS-CoV-2,2,b1,Series1_lineA_Mock_2
+lineA_inf_3,lineA_inf_3.fastq.gz,,lineA,SARS-CoV-2,3,b1,Series1_lineA_SARS-CoV-2_3
+lineA_rux_1,lineA_rux_1.fastq.gz,,lineA,SARS-CoV-2_Rux,1,b2,Series2_lineA_SARS-CoV-2_Rux_1
+lineB_mock_1,lineB_mock_1.fastq.gz,,lineB,Mock,1,b3,Series3_lineB_Mock_1
+lineB_inf_1,lineB_inf_1.fastq.gz,,lineB,SARS-CoV-2,1,b3,Series3_lineB_SARS-CoV-2_1

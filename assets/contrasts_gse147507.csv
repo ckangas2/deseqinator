@@ -1,0 +1,3 @@
+id,cell_line,reference,target
+calu3_sars2_vs_mock,Calu3,Mock,SARS-CoV-2
+a549ace2_sars2_vs_mock,A549-ACE2,Mock,SARS-CoV-2

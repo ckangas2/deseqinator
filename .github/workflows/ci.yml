@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  NXF_ANSI_LOG: false
+
+jobs:
+  unit:
+    name: Unit tests (one planted failure per check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install numpy pandas pytest
+      - run: bash tests/run_tests.sh
+      - name: Test data is reproducible from the generator
+        run: |
+          python3 tests/make_test_data.py regen >/dev/null
+          for f in tests/data/*; do cmp "$f" "regen/$(basename "$f")"; done
+
+  pipeline:
+    name: End to end, Nextflow ${{ matrix.nxf }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        nxf: ['24.10.0', 'latest-stable']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: nf-core/setup-nextflow@v2
+        with: { version: '${{ matrix.nxf }}' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Build container
+        run: docker build -t deseqinator:ci .
+      - run: echo "process.container = 'deseqinator:ci'" > ci.config
+
+      - name: Lint (strict syntax)
+        if: matrix.nxf == 'latest-stable'
+        run: nextflow lint .
+
+      - name: Run test profile
+        run: nextflow run . -profile test,docker -c ci.config --outdir results
+      - name: Assert results
+        run: python tests/check_test_results.py results
+
+      # ---- every gate must stop the run --------------------------------
+      - name: Declared strandedness that contradicts the data must fail
+        run: |
+          if nextflow run . -profile test,docker -c ci.config --strandedness forward --outdir neg1; then
+            echo "wrong --strandedness accepted"; exit 1; fi
+      - name: Contrast with one replicate per arm must fail before alignment
+        run: |
+          if nextflow run . -profile test,docker -c ci.config \
+               --contrasts tests/data/contrasts_underpowered.csv --outdir neg2; then
+            echo "underpowered contrast accepted"; exit 1; fi
+          test ! -d neg2/fastp
+      - name: Batch confounded with condition must fail
+        run: |
+          if nextflow run . -profile test,docker -c ci.config \
+               --input tests/data/samplesheet_confounded.csv --outdir neg3; then
+            echo "confounded design accepted"; exit 1; fi
+      - name: Mock library carrying virus must fail the viral gate
+        run: |
+          if nextflow run . -profile test,docker -c ci.config \
+               --input tests/data/samplesheet_mislabelled.csv --outdir neg4; then
+            echo "mislabelled sample accepted"; exit 1; fi
+          test ! -d neg4/deseq2
+      - name: Samples mapped to the wrong deposited columns must fail
+        run: |
+          if nextflow run . -profile test,docker -c ci.config \
+               --input tests/data/samplesheet_depswap.csv --outdir neg5; then
+            echo "deposited-ID swap accepted"; exit 1; fi
+      - name: Gene sets keyed by Ensembl ID must fail the coverage check
+        run: |
+          if nextflow run . -profile test,docker -c ci.config \
+               --gene_sets tests/data/test_hallmarks_ensembl.gmt --outdir neg6; then
+            echo "uncovered gene sets accepted"; exit 1; fi
+      - name: Ensembl-style GTF on a chr-style genome must fail validation
+        run: |
+          if nextflow run . -profile test,docker -c ci.config \
+               --host_gtf tests/data/host_nochr.gtf.gz --outdir neg7; then
+            echo "contig-name mismatch accepted"; exit 1; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-nxf-${{ matrix.nxf }}
+          path: |
+            results/summary.tsv
+            results/contrasts.tsv
+            results/design/
+            results/qc/
+            results/deseq2/
+            results/fgsea/
+            results/pipeline_info/
+            .nextflow.log
+
+  publish:
+    name: Publish container to GHCR
+    needs: [unit, pipeline]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=dev,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

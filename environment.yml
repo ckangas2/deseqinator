@@ -1,0 +1,32 @@
+# Software for every pipeline step. Used three ways:
+#   - baked into the Docker image (Dockerfile)
+#   - `-profile conda` builds it on the fly
+#   - `micromamba env create -f environment.yml` for running steps by hand
+#
+# R and Bioconductor are pinned as one release (Bioconductor 3.18 / R 4.3)
+# so DESeq2, apeglm and fgsea agree. msigdbr 7.5.1 ships its gene sets
+# inside the package (MSigDB 7.5.1), so `--gene_sets msigdb:H` needs no
+# network at run time; later msigdbr versions moved the data to a separate
+# download.
+name: deseqinator
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - numpy=1.26
+  - pandas=2.2
+  - fastp=0.23.4
+  - star=2.7.11b
+  - samtools=1.21
+  - subread=2.0.6
+  - multiqc=1.25
+  - r-base=4.3
+  - bioconductor-deseq2=1.42.0
+  - bioconductor-apeglm=1.24.0
+  - bioconductor-fgsea=1.28.0
+  - r-msigdbr=7.5.1
+  - r-ggplot2
+  - r-data.table
+  - procps-ng      # Nextflow's task metrics need `ps`
+  - gzip

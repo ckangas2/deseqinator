@@ -1,0 +1,16 @@
+reference/
+fastq/
+runs/
+samplesheet.csv
+*.bam
+*.bai
+__pycache__/
+.pytest_cache/
+.DS_Store
+work/
+.nextflow/
+.nextflow.log*
+results/
+results_*/
+ci.config
+local.config
